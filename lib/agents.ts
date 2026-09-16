@@ -1,4 +1,5 @@
 import { createAgent, openai } from "@inngest/agent-kit";
+import { serperSearchTool } from "./tools/serper";
 
 // Agent 1 : News Scout Agent
 export const newsScoutAgent = createAgent({
