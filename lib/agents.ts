@@ -1,6 +1,6 @@
 import { createAgent, openai } from "@inngest/agent-kit";
 import { serperSearchTool } from "./tools/serper";
-import { saveSentimentsTool } from "./tools/save";
+import { savePostsTool, saveSentimentsTool } from "./tools/save";
 
 // Agent 1 : News Scout Agent
 export const newsScoutAgent = createAgent({
@@ -41,5 +41,31 @@ export const sentimentAnalyzerAgent = createAgent({
   },
   tools: [saveSentimentsTool],
   tool_choice: "save_sentiments",
+  model: openai({ model: "gpt-5-mini" }),
+});
+
+// Agent 3 : Conetent creator Agent
+export const contentCreatorAgent = createAgent({
+  name: "content-creator",
+  description: "Create social media posts",
+  system: ({ network }) => {
+    const articles = network?.state.data.articles || [];
+    const sentiments = network?.state.data.sentiments || [];
+
+    return `
+      You are a social media expert. Create engaging posts from these articles:
+      Articles: ${JSON.stringify(articles, null, 2)}
+      Sentiments: ${JSON.stringify(sentiments, null, 2)}
+
+      Create 2-3 posts per article:
+      - One Twitter post (max 280 chars)
+      - One LinkedIn post (professional, ~200 chars)
+      - Include relevant hashtags
+
+      MUST use the save_posts tool to store your posts.`;
+  },
+
+  tools: [savePostsTool],
+  tool_choice: "save_posts",
   model: openai({ model: "gpt-5-mini" }),
 });
