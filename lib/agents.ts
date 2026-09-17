@@ -1,7 +1,11 @@
 import { createAgent, openai } from "@inngest/agent-kit";
 import { serperSearchTool } from "./tools/serper";
-import { approveContentTool, savePostsTool, saveSentimentsTool } from "./tools/save";
-import { generatePosterTool } from "./tools/imageGenerator"
+import {
+  approveContentTool,
+  savePostsTool,
+  saveSentimentsTool,
+} from "./tools/save";
+import { generatePosterTool } from "./tools/imageGenerator";
 
 // Agent 1 : News Scout Agent
 export const newsScoutAgent = createAgent({
@@ -68,7 +72,8 @@ export const contentCreatorAgent = createAgent({
 
   tools: [savePostsTool],
   tool_choice: "save_posts",
-  model: openai({ model: "gpt-5-mini" }),
+  // Content Creator
+  model: openai({ model: "gpt-5.4" }),
 });
 
 // Agent 4 : Poster generator Agent
@@ -99,12 +104,11 @@ export const moderatorAgent = createAgent({
   name: "moderator",
   description: "Reviews and approves content",
   system: ({ network }) => {
+    const articles = network?.state.data.articles || [];
+    const posts = network?.state.data.posts || [];
+    const posters = network?.state.data.posters || [];
 
-      const articles = network?.state.data.articles || [];
-      const posts = network?.state.data.posts || [];
-      const posters = network?.state.data.posters || [];
-
-      return `
+    return `
           You are a content moderator. Review all content:
           Articles (${articles.length}): ${JSON.stringify(articles.slice(0, 1), null, 2)}...
           Posts (${posts.length}): ${JSON.stringify(posts.slice(0, 1), null, 2)}...
@@ -117,9 +121,9 @@ export const moderatorAgent = createAgent({
 
           MUST use approve_content tool to approve the content.
      
-      `
+      `;
   },
   tools: [approveContentTool],
   tool_choice: "approve_content",
-  model: openai({ model: "gpt-5-mini" })
-})
+  model: openai({ model: "gpt-5.4" }),
+});
