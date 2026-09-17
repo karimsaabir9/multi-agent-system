@@ -16,17 +16,56 @@ export const generatePosterTool = createTool({
       .describe("A detailed description of the poster to generate"),
   }),
   handler: async (input, { network, step }) => {
+    // The network can re-route to this agent after a poster already exists
+    // (observed in practice: the router's decision can be based on state
+    // that hasn't settled yet). In-memory network.state isn't reliable across
+    // Inngest replay boundaries, so check the DB — the only durable source —
+    // wrapped in step.run so the check itself is memoized consistently.
+    const runId = network?.state.data.runId;
+    const existingPoster = await step?.run("check-existing-poster", async () => {
+      if (!runId) return null;
+      const { getDB } = await import("../db");
+      const db = await getDB();
+      const existing = await db.collection("results").findOne({ runId });
+      return existing?.state?.posters?.[0] ?? null;
+    });
+
+    if (existingPoster) {
+      if (network) {
+        network.state.data.posters = [existingPoster];
+      }
+      return { success: true, imageUrl: existingPoster.url, prompt: existingPoster.prompt };
+    }
+
     // Generate the poster using GPT-Image-2
     const imageUrl = await step?.run("image-api-call", async () => {
-      const response = await openai.images.generate({
-        model: "gpt-image-2",
-        prompt: input.prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "high",
-      });
+      const generate = async (prompt: string) => {
+        const response = await openai.images.generate({
+          model: "gpt-image-2",
+          prompt,
+          n: 1,
+          size: "1024x1024",
+          quality: "low",
+        });
 
-      return response.data?.[0]?.url;
+        return response.data?.[0]?.url;
+      };
+
+      try {
+        return await generate(input.prompt);
+      } catch (error) {
+        // OpenAI's safety system can reject prompts derived from news content
+        // (violence, real people, etc). That rejection is permanent, so retrying
+        // the same prompt would just fail again — fall back to a generic, safe
+        // prompt instead.
+        console.error(
+          "Poster prompt rejected, retrying with a generic fallback prompt:",
+          error,
+        );
+        return await generate(
+          "Abstract modern news and current-events themed poster, bold typography, professional color palette, no real people, no text",
+        );
+      }
     });
 
     if (!imageUrl) {
@@ -54,7 +93,7 @@ export const generatePosterTool = createTool({
 
       if (runId) {
         const result = await db.collection("results").updateOne(
-          { runId, status: "running" },
+          { runId },
           {
             $set: {
               "state.posters": network.state.data.posters,
@@ -62,6 +101,7 @@ export const generatePosterTool = createTool({
               updatedAt: new Date(),
             },
           },
+          { upsert: true },
         );
       } else {
         console.error("❌ [Poster Designer] No runId in state!");

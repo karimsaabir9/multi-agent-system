@@ -34,12 +34,14 @@ const superVisorAgent = createRoutingAgent({
         4. Use done tool when all steps are complete and content is approved  
 
         **Workflow Logic:**
-        - If no articles: route to "News Scout"  
-        - If articles but no sentiments: route to "Sentiment Analyzer" 
-        - If sentiments but no posts: route to "Content Creator"  
-        - If posts but no posters: route to "Poster Designer" 
-        - If everything done but not approved: route to "Moderator"  
-        - If approved: call done 
+        - If no articles: route to "News Scout"
+        - If articles but no sentiments: route to "sentiment-analyzer"
+        - If sentiments but no posts: route to "content-creator"
+        - If posts but no posters: route to "poster-generator"
+        - If everything done but not approved: route to "moderator"
+        - If approved: call done
+
+        IMPORTANT: Always pass the agent's exact name from the "Available Agents" list above to route_to_agent — never a human-readable label.
 
         Think step by step and make the best decision!
         `;

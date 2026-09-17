@@ -82,6 +82,12 @@ export const posterGeneratorAgent = createAgent({
   description: "Generate social media posters for the social media posts",
   system: ({ network }) => {
     const articles = network?.state.data.articles || [];
+    const posters = network?.state.data.posters || [];
+
+    if (posters.length > 0) {
+      return `A poster has already been generated for this run. Do NOT call generate_poster again — just confirm it's done.`;
+    }
+
     return `
      You are a creative designer. Generate ONE single poster that represents ALL the content:
       Articles: ${JSON.stringify(articles, null, 2)}
