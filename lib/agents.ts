@@ -1,6 +1,7 @@
 import { createAgent, openai } from "@inngest/agent-kit";
 import { serperSearchTool } from "./tools/serper";
 import { savePostsTool, saveSentimentsTool } from "./tools/save";
+import { generatePosterTool } from "./tools/imageGenerator"
 
 // Agent 1 : News Scout Agent
 export const newsScoutAgent = createAgent({
@@ -67,5 +68,28 @@ export const contentCreatorAgent = createAgent({
 
   tools: [savePostsTool],
   tool_choice: "save_posts",
+  model: openai({ model: "gpt-5-mini" }),
+});
+
+// Agent 4 : Poster generator Agent
+export const posterGeneratorAgent = createAgent({
+  name: "poster-generator",
+  description: "Generate social media posters for the social media posts",
+  system: ({ network }) => {
+    const posts = network?.state.data.posts || [];
+    const articles = network?.state.data.articles || [];
+    return `
+     You are a creative designer. Generate ONE single poster that represents ALL the content:
+      Articles: ${JSON.stringify(articles, null, 2)}
+     Posts: ${JSON.stringify(posts, null, 2)}
+
+      Use generate_poster tool ONCE to create a single, eye-catching poster.
+      Create ONE DALL-E prompt that captures the essence of all the content in a professional, modern design.
+      use fewer words in the prompt.
+      IMPORTANT: Call generate_poster only ONE time with a comprehensive prompt.
+      `;
+  },
+  tools: [generatePosterTool],
+  tool_choice: "generate_poster",
   model: openai({ model: "gpt-5-mini" }),
 });
