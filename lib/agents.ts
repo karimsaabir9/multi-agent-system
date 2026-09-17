@@ -1,6 +1,6 @@
 import { createAgent, openai } from "@inngest/agent-kit";
 import { serperSearchTool } from "./tools/serper";
-import { savePostsTool, saveSentimentsTool } from "./tools/save";
+import { approveContentTool, savePostsTool, saveSentimentsTool } from "./tools/save";
 import { generatePosterTool } from "./tools/imageGenerator"
 
 // Agent 1 : News Scout Agent
@@ -93,3 +93,33 @@ export const posterGeneratorAgent = createAgent({
   tool_choice: "generate_poster",
   model: openai({ model: "gpt-5-mini" }),
 });
+
+// Agent 5 : Moderator Agent
+export const moderatorAgent = createAgent({
+  name: "moderator",
+  description: "Reviews and approves content",
+  system: ({ network }) => {
+
+      const articles = network?.state.data.articles || [];
+      const posts = network?.state.data.posts || [];
+      const posters = network?.state.data.posters || [];
+
+      return `
+          You are a content moderator. Review all content:
+          Articles (${articles.length}): ${JSON.stringify(articles.slice(0, 1), null, 2)}...
+          Posts (${posts.length}): ${JSON.stringify(posts.slice(0, 1), null, 2)}...
+          Posters (${posters.length}): Generated
+
+          Check:
+          1. Is content accurate?
+          2. Are posts appropriate?
+          3. Is everything ready to publish?
+
+          MUST use approve_content tool to approve the content.
+     
+      `
+  },
+  tools: [approveContentTool],
+  tool_choice: "approve_content",
+  model: openai({ model: "gpt-5-mini" })
+})
