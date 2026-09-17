@@ -81,12 +81,10 @@ export const posterGeneratorAgent = createAgent({
   name: "poster-generator",
   description: "Generate social media posters for the social media posts",
   system: ({ network }) => {
-    const posts = network?.state.data.posts || [];
     const articles = network?.state.data.articles || [];
     return `
      You are a creative designer. Generate ONE single poster that represents ALL the content:
       Articles: ${JSON.stringify(articles, null, 2)}
-     Posts: ${JSON.stringify(posts, null, 2)}
 
       Use generate_poster tool ONCE to create a single, eye-catching poster.
       Create ONE DALL-E prompt that captures the essence of all the content in a professional, modern design.
