@@ -2,6 +2,11 @@
 import { useState } from "react";
 import SearchInput from "@/components/SearchInput";
 import { useQuery } from "@tanstack/react-query";
+import JobStatus from "@/components/JobStatus";
+import ArticleCard from "@/components/ArticleCard";
+import SentimentCard from "@/components/SentimentCard";
+import PostsCard from "@/components/PostsCard";
+import PosterCard from "@/components/PosterCard";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -70,6 +75,28 @@ export default function Home() {
           onRun={handleRun}
           isLoading={isLoading}
         />
+
+        {/* Result Status */}
+
+        {result && (
+          <>
+            <JobStatus
+              status={result.status}
+              articles={state.articles?.length}
+              sentiments={state.sentiments?.length}
+              posts={state.posts?.length}
+              posters={state.posters?.length}
+              approved={state.approved}
+            />
+            {/* Data Grid */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <ArticleCard articles={state.articles || []} />
+              <SentimentCard sentiments={state.sentiments || []} />
+              <PostsCard posts={state.posts || []} />
+              <PosterCard posters={state.posters || []} />
+            </div>
+          </>
+        )}
       </div>
     </main>
   );

@@ -6,6 +6,7 @@ import {
   saveSentimentsTool,
 } from "./tools/save";
 import { generatePosterTool } from "./tools/imageGenerator";
+import { checkFactsTool } from "./tools/checkFacts";
 
 // Agent 1 : News Scout Agent
 export const newsScoutAgent = createAgent({
@@ -111,6 +112,19 @@ export const moderatorAgent = createAgent({
     const articles = network?.state.data.articles || [];
     const posts = network?.state.data.posts || [];
     const posters = network?.state.data.posters || [];
+    const factCheck = network?.state.data.factCheck;
+
+    if (!factCheck) {
+      return `
+          You are a content moderator. Before approving anything, verify the main
+          claim is accurate.
+
+          Articles (${articles.length}): ${JSON.stringify(articles.slice(0, 1), null, 2)}...
+
+          Use the check_facts tool ONCE on the headline/claim of the first article above.
+          Do NOT call approve_content yet — only check_facts.
+      `;
+    }
 
     return `
           You are a content moderator. Review all content:
@@ -118,16 +132,19 @@ export const moderatorAgent = createAgent({
           Posts (${posts.length}): ${JSON.stringify(posts.slice(0, 1), null, 2)}...
           Posters (${posters.length}): Generated
 
+          Fact-check results for the main claim:
+          ${JSON.stringify(factCheck, null, 2)}
+
           Check:
-          1. Is content accurate?
+          1. Do the fact-check sources support the claim? If sourceCount is 0 or the sources
+             clearly contradict it, reject.
           2. Are posts appropriate?
           3. Is everything ready to publish?
 
-          MUST use approve_content tool to approve the content.
-     
+          MUST use the approve_content tool now to approve or reject the content.
       `;
   },
-  tools: [approveContentTool],
-  tool_choice: "approve_content",
+  tools: [approveContentTool, checkFactsTool],
+  tool_choice: "auto",
   model: openai({ model: "gpt-5.4" }),
 });
