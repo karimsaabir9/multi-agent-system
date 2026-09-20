@@ -1,6 +1,22 @@
 import { createTool } from "@inngest/agent-kit";
 import { z } from "zod";
 
+type Article = {
+  title: string;
+  link: string;
+  summary?: string;
+  source: string;
+  imageUrl?: string;
+};
+
+type SerperResultItem = {
+  title: string;
+  link: string;
+  snippet?: string;
+  source: string;
+  imageUrl?: string;
+};
+
 export const serperSearchTool = createTool({
   name: "serper_search",
   description:
@@ -39,7 +55,7 @@ export const serperSearchTool = createTool({
 
     // extract the results
 
-    const articles: any[] = [];
+    const articles: Article[] = [];
 
     if (response.knowledgeGraph) {
       articles.push({
@@ -53,7 +69,7 @@ export const serperSearchTool = createTool({
 
     // 2. Top Stories (API returns what it wants)
     if (response.topStories) {
-      response.topStories.forEach((item: any) => {
+      response.topStories.forEach((item: SerperResultItem) => {
         articles.push({
           title: item.title,
           link: item.link,
@@ -66,7 +82,7 @@ export const serperSearchTool = createTool({
 
     // 3. Organic results (API already respects 'num' parameter)
     if (response.organic) {
-      response.organic.forEach((item: any) => {
+      response.organic.forEach((item: SerperResultItem) => {
         articles.push({
           title: item.title,
           link: item.link,
@@ -79,7 +95,7 @@ export const serperSearchTool = createTool({
 
     // 4. Fallback to news
     if (articles.length === 0 && response.news) {
-      response.news.forEach((item: any) => {
+      response.news.forEach((item: SerperResultItem) => {
         articles.push({
           title: item.title,
           link: item.link,

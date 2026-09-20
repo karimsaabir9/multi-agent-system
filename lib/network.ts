@@ -50,7 +50,7 @@ const superVisorAgent = createRoutingAgent({
   tools: [routeToAgentTool, doneTool],
   tool_choice: "auto",
   lifecycle: {
-    onRoute: ({ result, network }) => {
+    onRoute: ({ result }) => {
       if (!result.toolCalls || result.toolCalls.length === 0) {
         return undefined;
       }
@@ -67,9 +67,10 @@ const superVisorAgent = createRoutingAgent({
 
       // if route_to_agent tool is called, route to the agent
       if (tool.tool.name === "route_to_agent") {
+        const content = tool.content as { data?: string } | string;
         const agentName =
-          (tool.content as any)?.data || (tool.content as string);
-        return [agentName];
+          typeof content === "string" ? content : content?.data;
+        return agentName ? [agentName] : undefined;
       }
       return undefined;
     },

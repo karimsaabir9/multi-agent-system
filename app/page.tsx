@@ -7,6 +7,7 @@ import ArticleCard from "@/components/ArticleCard";
 import SentimentCard from "@/components/SentimentCard";
 import PostsCard from "@/components/PostsCard";
 import PosterCard from "@/components/PosterCard";
+import SearchHistory from "@/components/SearchHistory";
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -28,6 +29,15 @@ export default function Home() {
       }
       return 2000;
     },
+  });
+
+  const { data: history } = useQuery({
+    queryKey: ["history"],
+    queryFn: async () => {
+      const response = await fetch("/api/results");
+      return response.json();
+    },
+    refetchInterval: 5000,
   });
 
   const handleRun = async () => {
@@ -74,6 +84,13 @@ export default function Home() {
           onLimitChange={setLimit}
           onRun={handleRun}
           isLoading={isLoading}
+        />
+
+        {/* Search History */}
+        <SearchHistory
+          items={history || []}
+          selectedRunId={runId}
+          onSelect={setRunId}
         />
 
         {/* Result Status */}
