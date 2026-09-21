@@ -37,18 +37,86 @@ export const generatePosterTool = createTool({
       return { success: true, imageUrl: existingPoster.url, prompt: existingPoster.prompt };
     }
 
-    // Generate the poster using GPT-Image-2
+    // Hard cost cap: defense in depth in case this agent ever gets
+    // re-invoked unexpectedly — stop paying for image generation after a
+    // couple of tries and let the workflow move on with a placeholder
+    // instead of looping indefinitely.
+    const attempts = await step?.run("count-poster-attempt", async () => {
+      if (!runId) return 1;
+      const { getDB } = await import("../db");
+      const db = await getDB();
+      const result = await db.collection("results").findOneAndUpdate(
+        { runId },
+        { $inc: { posterAttempts: 1 } },
+        { upsert: true, returnDocument: "after" },
+      );
+      return result?.posterAttempts ?? 1;
+    });
+
+    if (attempts && attempts > 2) {
+      const placeholder = {
+        url: "",
+        prompt: input.prompt,
+        note: "Poster generation skipped after repeated attempts",
+      };
+      if (network) {
+        network.state.data.posters = [placeholder];
+      }
+      await step?.run("save_placeholder_to_db", async () => {
+        if (!runId) return;
+        const { getDB } = await import("../db");
+        const db = await getDB();
+        await db.collection("results").updateOne(
+          { runId },
+          {
+            $set: {
+              "state.posters": [placeholder],
+              "progress.posterGenerator": "skipped",
+              updatedAt: new Date(),
+            },
+          },
+          { upsert: true },
+        );
+      });
+      return { success: false, skipped: true, prompt: input.prompt };
+    }
+
+    // Try gpt-image-1 first (cheaper), falling back to gpt-image-2 if the
+    // model isn't available on this OpenAI project/key — dall-e-3 already
+    // failed that way ("400 The model 'dall-e-3' does not exist"), and this
+    // account's actual model access hasn't been verified for gpt-image-1
+    // either, so don't strand the run on an unavailable model.
     const imageUrl = await step?.run("image-api-call", async () => {
-      const generate = async (prompt: string) => {
+      const generateWithModel = async (model: string, prompt: string) => {
         const response = await openai.images.generate({
-          model: "gpt-image-2",
+          model,
           prompt,
           n: 1,
           size: "1024x1024",
           quality: "low",
         });
 
-        return response.data?.[0]?.url;
+        // gpt-image-1/gpt-image-2 don't support the `url` response field —
+        // they always return base64 image data instead. That's why imageUrl
+        // kept coming back empty (no error, just nothing to read from `.url`).
+        const image = response.data?.[0];
+        if (image?.url) return image.url;
+        if (image?.b64_json) return `data:image/png;base64,${image.b64_json}`;
+        return undefined;
+      };
+
+      const generate = async (prompt: string) => {
+        try {
+          return await generateWithModel("gpt-image-1", prompt);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (!message.includes("does not exist")) throw error;
+          console.error(
+            "gpt-image-1 not available on this account, falling back to gpt-image-2:",
+            error,
+          );
+          return await generateWithModel("gpt-image-2", prompt);
+        }
       };
 
       try {
@@ -92,7 +160,7 @@ export const generatePosterTool = createTool({
       const runId = network.state.data.runId;
 
       if (runId) {
-        const result = await db.collection("results").updateOne(
+        await db.collection("results").updateOne(
           { runId },
           {
             $set: {

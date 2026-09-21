@@ -11,7 +11,7 @@ export const routeToAgentTool = createTool({
       .describe("The reasoning for routing to the next agent"),
   }),
   handler: async ({ agent_name, reasoning }, { network }) => {
-    console.log("Supervisor: Routing to agent:", agent_name);
+    console.log("Supervisor: Routing to agent:", agent_name, "-", reasoning);
 
     if (!network) {
       throw new Error("Network not Available");

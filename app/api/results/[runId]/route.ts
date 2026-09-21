@@ -34,3 +34,27 @@ export async function GET(
     );
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ runId: string }> },
+) {
+  try {
+    const { runId } = await params;
+
+    const db = await getDB();
+    const result = await db.collection("results").deleteOne({ runId });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Run not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting result:", error);
+    return NextResponse.json(
+      { error: "Failed to delete result" },
+      { status: 500 },
+    );
+  }
+}

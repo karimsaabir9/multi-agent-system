@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import SearchInput from "@/components/SearchInput";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import JobStatus from "@/components/JobStatus";
 import ArticleCard from "@/components/ArticleCard";
 import SentimentCard from "@/components/SentimentCard";
@@ -13,6 +13,7 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [limit, setLimit] = useState(1);
   const [runId, setRunId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   const { data: result, isLoading } = useQuery({
     queryKey: ["results", runId],
@@ -38,6 +39,18 @@ export default function Home() {
       return response.json();
     },
     refetchInterval: 5000,
+  });
+
+  const deleteRun = useMutation({
+    mutationFn: async (deleteRunId: string) => {
+      await fetch(`/api/results/${deleteRunId}`, { method: "DELETE" });
+    },
+    onSuccess: (_data, deleteRunId) => {
+      queryClient.invalidateQueries({ queryKey: ["history"] });
+      if (runId === deleteRunId) {
+        setRunId(null);
+      }
+    },
   });
 
   const handleRun = async () => {
@@ -91,6 +104,7 @@ export default function Home() {
           items={history || []}
           selectedRunId={runId}
           onSelect={setRunId}
+          onDelete={(deleteRunId) => deleteRun.mutate(deleteRunId)}
         />
 
         {/* Result Status */}
