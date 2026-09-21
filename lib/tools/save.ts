@@ -25,7 +25,7 @@ export const saveSentimentsTool = createTool({
       const runId = network.state.data.runId;
 
       if (runId) {
-        const result = await db.collection("result").updateOne(
+        const result = await db.collection("results").updateOne(
           {
             runId,
             status: "running",
