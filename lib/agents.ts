@@ -22,7 +22,11 @@ export const newsScoutAgent = createAgent({
     ALWAYS use the search_news tool with the user's query.    
     `,
   tools: [serperSearchTool],
-  model: openai({ model: "gpt-5-mini" }),
+  model: openai({
+    model: "gpt-5-mini",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultParameters: { reasoning_effort: "low" } as any,
+  }),
 });
 
 // Agent 2 : Sentiment Analyzer Agent
@@ -47,7 +51,11 @@ export const sentimentAnalyzerAgent = createAgent({
   },
   tools: [saveSentimentsTool],
   tool_choice: "save_sentiments",
-  model: openai({ model: "gpt-5-mini" }),
+  model: openai({
+    model: "gpt-5-mini",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultParameters: { reasoning_effort: "low" } as any,
+  }),
 });
 
 // Agent 3 : Conetent creator Agent
@@ -74,7 +82,11 @@ export const contentCreatorAgent = createAgent({
   tools: [savePostsTool],
   tool_choice: "save_posts",
   // Content Creator
-  model: openai({ model: "gpt-5.4" }),
+  model: openai({
+    model: "gpt-5-mini",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultParameters: { reasoning_effort: "low" } as any,
+  }),
 });
 
 // Agent 4 : Poster generator Agent
@@ -96,12 +108,22 @@ export const posterGeneratorAgent = createAgent({
       Use generate_poster tool ONCE to create a single, eye-catching poster.
       Create ONE DALL-E prompt that captures the essence of all the content in a professional, modern design.
       use fewer words in the prompt.
+      IMPORTANT: The prompt MUST explicitly say the image should contain NO text,
+      NO words, NO letters, NO titles, and NO captions anywhere — background art
+      and imagery only. Image models cannot reliably render legible text that
+      stays within the canvas, so the title is overlaid separately by the app
+      afterwards — any text the model draws itself risks being cropped or
+      illegible.
       IMPORTANT: Call generate_poster only ONE time with a comprehensive prompt.
       `;
   },
   tools: [generatePosterTool],
   tool_choice: "generate_poster",
-  model: openai({ model: "gpt-5-mini" }),
+  model: openai({
+    model: "gpt-5-mini",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultParameters: { reasoning_effort: "low" } as any,
+  }),
 });
 
 // Agent 5 : Moderator Agent
@@ -146,5 +168,9 @@ export const moderatorAgent = createAgent({
   },
   tools: [approveContentTool, checkFactsTool],
   tool_choice: "auto",
-  model: openai({ model: "gpt-5.4" }),
+  model: openai({
+    model: "gpt-5-mini",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultParameters: { reasoning_effort: "low" } as any,
+  }),
 });

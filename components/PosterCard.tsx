@@ -10,9 +10,10 @@ type Poster = {
 
 type PostersCardProps = {
   posters: Poster[];
+  title?: string;
 };
 
-const PosterCard = ({ posters }: PostersCardProps) => {
+const PosterCard = ({ posters, title }: PostersCardProps) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!posters || posters.length === 0) {
@@ -42,11 +43,20 @@ const PosterCard = ({ posters }: PostersCardProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <img
-            src={poster.url}
-            alt="Generated poster"
-            className="w-full rounded border"
-          />
+          <div className="relative overflow-hidden rounded border">
+            <img
+              src={poster.url}
+              alt="Generated poster"
+              className="w-full block"
+            />
+            {title && (
+              <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent p-4">
+                <h3 className="text-white text-2xl font-bold uppercase tracking-wide drop-shadow-md break-words">
+                  {title}
+                </h3>
+              </div>
+            )}
+          </div>
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
               <strong>Prompt:</strong>

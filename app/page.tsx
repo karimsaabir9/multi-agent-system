@@ -124,7 +124,7 @@ export default function Home() {
               <ArticleCard articles={state.articles || []} />
               <SentimentCard sentiments={state.sentiments || []} />
               <PostsCard posts={state.posts || []} />
-              <PosterCard posters={state.posters || []} />
+              <PosterCard posters={state.posters || []} title={result.input} />
             </div>
           </>
         )}

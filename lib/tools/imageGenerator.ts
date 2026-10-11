@@ -34,7 +34,12 @@ export const generatePosterTool = createTool({
       if (network) {
         network.state.data.posters = [existingPoster];
       }
-      return { success: true, imageUrl: existingPoster.url, prompt: existingPoster.prompt };
+      // Don't echo the (potentially huge, base64-encoded) image back in the
+      // tool result — AgentKit folds every tool result into the shared
+      // history that gets replayed into every later agent's prompt, so a
+      // full poster image here blows the moderator's context window. The
+      // frontend reads the real URL from network.state.data.posters / Mongo.
+      return { success: true, posterSaved: true, prompt: existingPoster.prompt };
     }
 
     // Hard cost cap: defense in depth in case this agent ever gets
@@ -175,6 +180,8 @@ export const generatePosterTool = createTool({
         console.error("❌ [Poster Designer] No runId in state!");
       }
     });
-    return { success: true, imageUrl, prompt: input.prompt };
+    // See the existingPoster branch above: deliberately omit `imageUrl` here
+    // so the (base64) image data never enters the network's shared history.
+    return { success: true, posterSaved: true, prompt: input.prompt };
   },
 });
